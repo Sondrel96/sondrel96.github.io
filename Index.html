@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kalkulator – pris per meter plank</title>
+
+  <!-- PWA: manifest + iOS-tegning -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#2563eb" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --card-bg: #ffffff;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --radius: 14px;
+      --danger: #dc2626;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: radial-gradient(circle at top, #e5edff 0, #f3f4f6 45%, #f3f4f6 100%);
+      color: var(--text-main);
+      display: flex;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 430px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 16px 14px 16px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .title {
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #e0ecff;
+      color: #1d4ed8;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .field-row {
+      margin-bottom: 8px;
+    }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 3px;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    select {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 8px 9px;
+      font-size: 0.9rem;
+      outline: none;
+      background: #f9fafb;
+      transition: border 0.15s, box-shadow 0.15s, background 0.15s;
+      -webkit-appearance: none;
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type="number"]:focus,
+    input[type="text"]:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--primary);
+      background: #ffffff;
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+    }
+
+    textarea {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 8px 9px;
+      font-size: 0.85rem;
+      resize: vertical;
+      min-height: 80px;
+      background: #f9fafb;
+    }
+
+    .unit {
+      margin-left: 6px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .price-row {
+      display: grid;
+      grid-template-columns: 2fr 1.4fr;
+      gap: 8px;
+    }
+
+    .button-row {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 9px 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.08s ease, box-shadow 0.08s ease,
+        background 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.35);
+    }
+
+    .btn-primary:active {
+      transform: translateY(1px);
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.35);
+      background: var(--primary-dark);
+    }
+
+    .btn-ghost {
+      background: #e5e7eb;
+      color: #374151;
+      box-shadow: none;
+    }
+
+    .btn-ghost:active {
+      transform: translateY(1px);
+      background: #d1d5db;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px dashed var(--border);
+      color: #374151;
+      box-shadow: none;
+    }
+
+    .btn-danger-outline {
+      background: transparent;
+      border: 1px dashed rgba(220, 38, 38, 0.4);
+      color: var(--danger);
+      box-shadow: none;
+    }
+
+    .btn-icon {
+      flex: 0 0 auto;
+      width: auto;
+      padding: 4px 6px;
+      font-size: 0.75rem;
+      border-radius: 999px;
+    }
+
+    .results {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+    }
+
+    .result-main {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .result-main span {
+      color: var(--primary-dark);
+    }
+
+    .result-line {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .section-title {
+      margin-top: 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .helper {
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .lines-list {
+      margin-top: 6px;
+      border-radius: 10px;
+      border: 1px dashed var(--border);
+      padding: 6px 7px;
+      max-height: 180px;
+      overflow-y: auto;
+      background: #f9fafb;
+    }
+
+    .line-row {
+      font-size: 0.8rem;
+      padding: 4px 2px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .line-row:last-child {
+      border-bottom: none;
+    }
+
+    .line-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .line-main {
+      font-weight: 500;
+    }
+
+    .line-sub {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    .line-price {
+      font-weight: 600;
+      white-space: nowrap;
+      font-size: 0.8rem;
+      margin-right: 4px;
+    }
+
+    .lines-empty {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 6px 0;
+    }
+
+    .total-offer {
+      margin-top: 4px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-align: right;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      .card {
+        padding: 14px 10px 14px;
+      }
+      .button-row {
+        flex-direction: column;
+      }
+      button {
+        width: 100%;
+      }
+      .btn-icon {
+        width: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Kalkulator-kort -->
+    <div class="card">
+      <div class="card-header">
+        <div class="title">Pris per meter plank</div>
+        <div class="badge">uhøvlet</div>
+      </div>
+
+      <!-- Inndata plank -->
+      <div class="field-row">
+        <label for="thickness">
+          <span>Tykkelse</span>
+          <span class="unit">mm</span>
+        </label>
+        <input type="number" id="thickness" value="52" inputmode="decimal" />
+      </div>
+
+      <div class="field-row">
+        <label for="width">
+          <span>Bredde</span>
+          <span class="unit">mm</span>
+        </label>
+        <input type="number" id="width" value="200" inputmode="decimal" />
+      </div>
+
+      <div class="field-row">
+        <label for="length">
+          <span>Lengde</span>
+          <span class="unit">mm</span>
+        </label>
+        <input type="number" id="length" value="3000" inputmode="decimal" />
+      </div>
+
+      <!-- Pris + mva-valg -->
+      <div class="field-row">
+        <label>
+          <span>Pris</span>
+          <span class="unit">kr / liter</span>
+        </label>
+        <div class="price-row">
+          <input type="number" id="literPrice" value="60" inputmode="decimal" />
+          <select id="vatMode">
+            <option value="incl">Ink. mva</option>
+            <option value="ex">Eks. mva</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Antall planker (for denne linjen) -->
+      <div class="field-row">
+        <label for="numBoards">
+          <span>Antall planker</span>
+          <span class="unit">stk</span>
+        </label>
+        <input type="number" id="numBoards" value="1" inputmode="decimal" />
+      </div>
+
+      <!-- Beskrivelse / varetekst -->
+      <div class="field-row">
+        <label for="lineDescription">
+          <span>Beskrivelse / varetekst</span>
+        </label>
+        <input
+          type="text"
+          id="lineDescription"
+          placeholder="F.eks. Terrassebord, reisverk, lekter ..."
+        />
+      </div>
+
+      <div class="button-row">
+        <button class="btn-primary" onclick="calculatePrice()">
+          Beregn pris
+        </button>
+        <button class="btn-ghost" onclick="addLineToOffer()">
+          Legg til linje i tilbud
+        </button>
+        <button class="btn-ghost" onclick="resetForm()">
+          Nullstill
+        </button>
+      </div>
+
+      <!-- Resultater per planke / per meter -->
+      <div class="results">
+        <div id="result" class="result-main">
+          Pris per meter: <span>–</span>
+        </div>
+        <div id="liters" class="result-line">Volum per planke: –</div>
+        <div id="total" class="result-line">Totalpris per planke: –</div>
+      </div>
+
+      <div class="helper">
+        Alle priser vises inkl. mva. 1 liter = 1&nbsp;dm³ = 1&nbsp;000&nbsp;000 mm³.
+      </div>
+    </div>
+
+    <!-- Tilbuds-kort -->
+    <div class="card">
+      <div class="card-header">
+        <div class="title">Linjer i tilbud</div>
+        <div class="badge">oversikt</div>
+      </div>
+
+      <div class="lines-list" id="linesList">
+        <div class="lines-empty">Ingen linjer lagt til ennå.</div>
+      </div>
+
+      <div class="total-offer" id="offerTotal">Totalsum: 0,00 kr</div>
+
+      <div class="section-title">Sammendrag til tilbud</div>
+      <div class="field-row">
+        <textarea
+          id="offerSummary"
+          readonly
+          placeholder="Trykk «Generer sammendrag» for å lage en tekst du kan kopiere inn i tilbudet."
+        ></textarea>
+      </div>
+
+      <!-- E-post-detaljer -->
+      <div class="field-row">
+        <label for="emailTo">
+          <span>Mottaker e-post (valgfritt)</span>
+        </label>
+        <input
+          type="text"
+          id="emailTo"
+          placeholder="kundens.epost@firma.no"
+        />
+      </div>
+      <div class="field-row">
+        <label for="emailSubject">
+          <span>Emne (valgfritt)</span>
+        </label>
+        <input
+          type="text"
+          id="emailSubject"
+          placeholder="Tilbud på uhøvlet plank"
+        />
+      </div>
+
+      <div class="button-row">
+        <button class="btn-primary" onclick="generateSummary()">
+          Generer sammendrag
+        </button>
+        <button class="btn-outline" onclick="sendSummaryByEmail()">
+          Send sammendrag på e-post
+        </button>
+        <button class="btn-danger-outline" onclick="clearLines()">
+          Tøm tilbud
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let offerLines = [];
+
+    function loadLines() {
+      try {
+        const saved = localStorage.getItem("plankOfferLines");
+        if (saved) {
+          offerLines = JSON.parse(saved);
+        }
+      } catch (e) {
+        offerLines = [];
+      }
+      renderLines();
+    }
+
+    function saveLines() {
+      try {
+        localStorage.setItem("plankOfferLines", JSON.stringify(offerLines));
+      } catch (e) {
+        // ignorer hvis ikke tilgjengelig
+      }
+    }
+
+    function getCurrentCalculation() {
+      const thicknessMm = parseFloat(document.getElementById("thickness").value);
+      const widthMm = parseFloat(document.getElementById("width").value);
+      const lengthMm = parseFloat(document.getElementById("length").value);
+      const literPriceInput = parseFloat(document.getElementById("literPrice").value);
+      const vatMode = document.getElementById("vatMode").value;
+      const numBoards = parseFloat(document.getElementById("numBoards").value);
+      const descriptionRaw = document.getElementById("lineDescription").value || "";
+      const description = descriptionRaw.trim();
+
+      if (
+        isNaN(thicknessMm) ||
+        isNaN(widthMm) ||
+        isNaN(lengthMm) ||
+        isNaN(literPriceInput) ||
+        thicknessMm <= 0 ||
+        widthMm <= 0 ||
+        lengthMm <= 0 ||
+        literPriceInput <= 0
+      ) {
+        return null;
+      }
+
+      let effectiveLiterPrice = literPriceInput;
+      if (vatMode === "ex") {
+        effectiveLiterPrice = literPriceInput * 1.25; // legg til 25 % mva
+      }
+
+      const volumeMm3 = thicknessMm * widthMm * lengthMm;
+      const volumeLiters = volumeMm3 / 1000000;
+      const pricePerBoard = volumeLiters * effectiveLiterPrice;
+      const lengthM = lengthMm / 1000;
+      const pricePerMeter = pricePerBoard / lengthM;
+
+      const boards = !isNaN(numBoards) && numBoards > 0 ? numBoards : 1;
+      const totalVolumeOrder = volumeLiters * boards;
+      const totalPriceOrder = pricePerBoard * boards;
+
+      return {
+        thicknessMm,
+        widthMm,
+        lengthMm,
+        lengthM,
+        literPriceInput,
+        vatMode,
+        effectiveLiterPrice,
+        volumeLiters,
+        pricePerBoard,
+        pricePerMeter,
+        boards,
+        totalVolumeOrder,
+        totalPriceOrder,
+        description
+      };
+    }
+
+    function calculatePrice() {
+      const calc = getCurrentCalculation();
+      const resultEl = document.getElementById("result");
+      const litersEl = document.getElementById("liters");
+      const totalEl = document.getElementById("total");
+
+      if (!calc) {
+        resultEl.innerHTML = 'Pris per meter: <span>–</span>';
+        litersEl.textContent = 'Volum per planke: Sjekk inndata (må være > 0).';
+        totalEl.textContent = 'Totalpris per planke: –';
+        return;
+      }
+
+      resultEl.innerHTML =
+        'Pris per meter: <span>' + calc.pricePerMeter.toFixed(2) + ' kr</span>';
+
+      litersEl.textContent =
+        'Volum per planke: ' + calc.volumeLiters.toFixed(2) +
+        ' liter (' + calc.boards + ' stk: ' + calc.totalVolumeOrder.toFixed(2) + ' liter totalt)';
+
+      totalEl.textContent =
+        'Totalpris per planke: ' + calc.pricePerBoard.toFixed(2) +
+        ' kr (inkl. mva)';
+    }
+
+    function addLineToOffer() {
+      const calc = getCurrentCalculation();
+      if (!calc) {
+        alert("Sjekk at alle tall er fylt inn før du legger til linje.");
+        return;
+      }
+
+      const autoDesc = `${calc.thicknessMm}x${calc.widthMm} mm, L=${calc.lengthM.toFixed(2)} m`;
+      const finalDescription = calc.description || autoDesc;
+
+      offerLines.push({
+        id: Date.now(),
+        description: finalDescription,
+        thicknessMm: calc.thicknessMm,
+        widthMm: calc.widthMm,
+        lengthMm: calc.lengthMm,
+        lengthM: calc.lengthM,
+        boards: calc.boards,
+        pricePerMeter: calc.pricePerMeter,
+        totalPriceOrder: calc.totalPriceOrder,
+        totalVolumeOrder: calc.totalVolumeOrder
+      });
+
+      saveLines();
+      renderLines();
+    }
+
+    function deleteLine(id) {
+      if (!confirm("Slette denne linjen fra tilbudet?")) return;
+      offerLines = offerLines.filter(line => line.id !== id);
+      saveLines();
+      renderLines();
+    }
+
+    function renderLines() {
+      const list = document.getElementById("linesList");
+      const offerTotalEl = document.getElementById("offerTotal");
+
+      list.innerHTML = "";
+
+      if (offerLines.length === 0) {
+        list.innerHTML = '<div class="lines-empty">Ingen linjer lagt til ennå.</div>';
+        offerTotalEl.textContent = "Totalsum: 0,00 kr";
+        return;
+      }
+
+      let totalSum = 0;
+
+      offerLines.forEach((line, index) => {
+        totalSum += line.totalPriceOrder;
+
+        const row = document.createElement("div");
+        row.className = "line-row";
+
+        const textWrap = document.createElement("div");
+        textWrap.className = "line-text";
+
+        const lineMain = document.createElement("div");
+        lineMain.className = "line-main";
+        lineMain.textContent = `${index + 1}. ${line.description}`;
+
+        const dims = `${line.thicknessMm} x ${line.widthMm} mm, L=${line.lengthM.toFixed(2)} m`;
+        const lineSub = document.createElement("div");
+        lineSub.className = "line-sub";
+        lineSub.textContent =
+          `${dims} | ${line.boards} stk – ${line.pricePerMeter.toFixed(2)} kr/m – ` +
+          `volum: ${line.totalVolumeOrder.toFixed(2)} l`;
+
+        textWrap.appendChild(lineMain);
+        textWrap.appendChild(lineSub);
+
+        const right = document.createElement("div");
+        right.style.display = "flex";
+        right.style.alignItems = "center";
+        right.style.gap = "4px";
+
+        const linePrice = document.createElement("div");
+        linePrice.className = "line-price";
+        linePrice.textContent = line.totalPriceOrder.toFixed(2) + " kr";
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "btn-icon";
+        deleteBtn.style.background = "transparent";
+        deleteBtn.style.border = "1px solid rgba(220,38,38,0.3)";
+        deleteBtn.style.color = "var(--danger)";
+        deleteBtn.textContent = "✕";
+        deleteBtn.title = "Slett linje";
+        deleteBtn.onclick = () => deleteLine(line.id);
+
+        right.appendChild(linePrice);
+        right.appendChild(deleteBtn);
+
+        row.appendChild(textWrap);
+        row.appendChild(right);
+
+        list.appendChild(row);
+      });
+
+      offerTotalEl.textContent = "Totalsum: " + totalSum.toFixed(2) + " kr";
+    }
+
+    function generateSummary() {
+      if (offerLines.length === 0) {
+        document.getElementById("offerSummary").value =
+          "Ingen linjer i tilbudet.";
+        return;
+      }
+
+      let totalSum = 0;
+      let linesText = offerLines
+        .map((line, index) => {
+          totalSum += line.totalPriceOrder;
+          return (
+            (index + 1) + ". " +
+            `${line.description} – ${line.thicknessMm} x ${line.widthMm} mm, ` +
+            `L=${line.lengthM.toFixed(2)} m, ${line.boards} stk, ` +
+            `pris per meter: ${line.pricePerMeter.toFixed(2)} kr/m, ` +
+            `totalpris: ${line.totalPriceOrder.toFixed(2)} kr (inkl. mva)`
+          );
+        })
+        .join("\n");
+
+      linesText += "\n\nTotalsum: " + totalSum.toFixed(2) + " kr (inkl. mva)";
+
+      const textarea = document.getElementById("offerSummary");
+      textarea.value = linesText;
+      textarea.select();
+    }
+
+    function sendSummaryByEmail() {
+      const summaryEl = document.getElementById("offerSummary");
+      if (!summaryEl.value.trim()) {
+        // generer automatisk hvis tomt
+        generateSummary();
+      }
+
+      const to = (document.getElementById("emailTo").value || "").trim();
+      const subjectRaw =
+        (document.getElementById("emailSubject").value || "Tilbud på uhøvlet plank").trim();
+
+      const body = document.getElementById("offerSummary").value || "";
+
+      const subject = encodeURIComponent(subjectRaw);
+      const encodedBody = encodeURIComponent(body);
+
+      const mailtoLink = `mailto:${encodeURIComponent(to)}?subject=${subject}&body=${encodedBody}`;
+
+      window.location.href = mailtoLink;
+    }
+
+    function clearLines() {
+      if (!confirm("Er du sikker på at du vil tømme alle linjer i tilbudet?")) {
+        return;
+      }
+      offerLines = [];
+      saveLines();
+      renderLines();
+      document.getElementById("offerSummary").value = "";
+    }
+
+    function resetForm() {
+      document.getElementById("thickness").value = 52;
+      document.getElementById("width").value = 200;
+      document.getElementById("length").value = 3000;
+      document.getElementById("literPrice").value = 60;
+      document.getElementById("vatMode").value = "incl";
+      document.getElementById("numBoards").value = 1;
+      document.getElementById("lineDescription").value = "";
+
+      document.getElementById("result").innerHTML = 'Pris per meter: <span>–</span>';
+      document.getElementById("liters").textContent = 'Volum per planke: –';
+      document.getElementById("total").textContent = 'Totalpris per planke: –';
+    }
+
+    // last lagrede linjer når appen åpnes
+    loadLines();
+
+    // PWA: registrer service worker
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js").catch((err) => {
+          console.log("Service worker registrering feilet:", err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
